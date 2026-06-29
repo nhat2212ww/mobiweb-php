@@ -13,7 +13,7 @@ class OTP {
     const VALIDATE_ENDPOINT = "/otp/v3/validate/";
     const OTP_METHOD = "POST";
 
-    public static function generate(Auth $auth = null, string $mobile, string $sender = "SECUREPIN", string $message = "Please do not share your password pin. Your password pin is: [PIN]", int $validity = 600): array{
+    public static function generate(Auth $auth = null, string $mobile, string $sender = "SECUREPIN", string $message = "Please do not share your password pin. Your password pin is: [PIN]", int $validity = 600, string $reference_code = ""): array{
 
         if (!$auth) {
             throw new \Exception("Cannot generate OTP without authentication");
@@ -24,6 +24,8 @@ class OTP {
             throw new \Exception("Cannot retrieve Access Token");
         }
 
+        $endpoint = $auth->getEndPoint();
+
         $http = new HttpClient();
         $headers = array();
         $headers["Authorization"] = "Bearer " . $access_token;
@@ -32,8 +34,9 @@ class OTP {
         $body->sender = $sender;
         $body->message = $message;
         $body->validity = $validity;
+        $body->reference = $reference_code;
 
-        $executedRequest=$http->request(APIClient::API_ENDPOINT . OTP::GENERATE_ENDPOINT, OTP::OTP_METHOD, $headers, $body);
+        $executedRequest=$http->request($endpoint .  OTP::GENERATE_ENDPOINT, OTP::OTP_METHOD, $headers, $body);
 
         if($executedRequest->response->body->status_code != HttpClient::HTTP_CREATED){
             $apiError = new APIError($executedRequest->response->body->status_code, $executedRequest->response->body->status_message, $executedRequest->response->body->errors);
@@ -54,6 +57,8 @@ class OTP {
             throw new \Exception("Cannot retrieve Access Token");
         }
 
+        $endpoint = $auth->getEndPoint();
+
         $http = new HttpClient();
         $headers = array();
         $headers["Authorization"] = "Bearer " . $access_token;
@@ -61,7 +66,7 @@ class OTP {
         $body->mobile = $mobile;
         $body->pin = $pin;
 
-        $executedRequest=$http->request(APIClient::API_ENDPOINT . OTP::VALIDATE_ENDPOINT . $id, OTP::OTP_METHOD, $headers, $body);
+        $executedRequest=$http->request($endpoint . OTP::VALIDATE_ENDPOINT . $id, OTP::OTP_METHOD, $headers, $body);
 
         if($executedRequest->response->body->status_code != HttpClient::HTTP_OK){
             $apiError = new APIError($executedRequest->response->body->status_code, $executedRequest->response->body->status_message, $executedRequest->response->body->errors);
